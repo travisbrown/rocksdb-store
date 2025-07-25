@@ -1,0 +1,24 @@
+[package]
+name = "rocksdb-store"
+authors = ["Travis Brown <travisrobertbrown@gmail.com>"]
+homepage = "https://github.com/travisbrown/rocksdb-store"
+repository = "https://github.com/travisbrown/rocksdb-store"
+description = "Some helpers for working with RocksDB databases"
+keywords = ["rocksdb"]
+license = "GPL-3.0-only"
+readme = "README.md"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bincode = { version = "2", features = ["serde"] }
+rocksdb = { version = "0.23" }
+serde = "1"
+thiserror = "2"
+
+[dev-dependencies]
+quickcheck = "1"
+quickcheck_macros = "1"
+quickcheck-arbitrary-derive = "0.2"
+serde_derive = "1"
+tempfile = "3"
