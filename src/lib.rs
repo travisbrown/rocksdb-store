@@ -141,7 +141,7 @@ impl<'de, const W: bool, C: serde::de::Deserialize<'de>, B: serde::de::Deseriali
         cfs.push(books_cf);
 
         let db: Db = if !W {
-            DB::open_cf_descriptors_read_only(&options, path, cfs, true)?.into()
+            DB::open_cf_descriptors_read_only(&options, path, cfs, false)?.into()
         } else if optimistic_transactions {
             OptimisticTransactionDB::open_cf_descriptors(&options, path, cfs)?.into()
         } else {
