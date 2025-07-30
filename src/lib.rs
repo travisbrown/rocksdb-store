@@ -166,7 +166,7 @@ impl<'de, const W: bool, C: serde::de::Deserialize<'de>, B: serde::de::Deseriali
 }
 
 impl<C, B> Database<false, C, B> {
-    pub fn underlying_db(&self) -> &DB {
+    pub fn underlying(&self) -> &DB {
         // Safe because we know statically that the database is read-only.
         self.db.read_only().unwrap()
     }
