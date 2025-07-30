@@ -165,10 +165,61 @@ impl<'de, const W: bool, C: serde::de::Deserialize<'de>, B: serde::de::Deseriali
     }
 }
 
+impl<C, B> Database<true, C, B> {
+    pub fn admin<P: AsRef<Path>>(
+        path: P,
+        mut cfs: Vec<ColumnFamilyDescriptor>,
+    ) -> Result<Admin, Error> {
+        let config_cf = ColumnFamilyDescriptor::new(CONFIG_CF_NAME, Options::default());
+        let books_cf = ColumnFamilyDescriptor::new(BOOKS_CF_NAME, Options::default());
+
+        cfs.push(config_cf);
+        cfs.push(books_cf);
+
+        let cf_names = cfs.iter().map(|cf| cf.name().to_string()).collect();
+
+        Ok(Admin {
+            underlying: DB::open_cf_descriptors(&Options::default(), path, cfs)?,
+            cf_names,
+        })
+    }
+}
+
 impl<C, B> Database<false, C, B> {
     pub fn underlying(&self) -> &DB {
         // Safe because we know statically that the database is read-only.
         self.db.read_only().unwrap()
+    }
+}
+
+pub struct Admin {
+    underlying: DB,
+    cf_names: Vec<String>,
+}
+
+impl Admin {
+    pub fn flush(&self) -> Result<(), rocksdb::Error> {
+        for cf_name in &self.cf_names {
+            if let Some(cf) = self.underlying.cf_handle(cf_name) {
+                self.underlying.flush_cf(cf)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn compact(&self) -> Result<(), rocksdb::Error> {
+        let mut options = rocksdb::CompactOptions::default();
+        options.set_change_level(true);
+
+        for cf_name in &self.cf_names {
+            if let Some(cf) = self.underlying.cf_handle(cf_name) {
+                self.underlying
+                    .compact_range_cf_opt::<&[u8], &[u8]>(cf, None, None, &options);
+            }
+        }
+
+        self.underlying.wait_for_compact(&Default::default())
     }
 }
 
