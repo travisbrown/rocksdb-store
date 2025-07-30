@@ -70,6 +70,24 @@ impl Db {
         }
     }
 
+    pub fn multi_get<K: AsRef<[u8]>, I: IntoIterator<Item = K>>(
+        &self,
+        cf: &ColumnFamily,
+        keys: I,
+    ) -> Result<Vec<Option<Vec<u8>>>, rocksdb::Error> {
+        match self.0.as_ref() {
+            DbInner::ReadOnly(db) => db.multi_get_cf(keys.into_iter().map(|key| (cf, key))),
+            DbInner::OptimisticTransaction(db) => {
+                db.multi_get_cf(keys.into_iter().map(|key| (cf, key)))
+            }
+            DbInner::PessimisticTransaction(db) => {
+                db.multi_get_cf(keys.into_iter().map(|key| (cf, key)))
+            }
+        }
+        .into_iter()
+        .collect()
+    }
+
     pub fn put<K: AsRef<[u8]>, V: AsRef<[u8]>>(
         &self,
         cf: &ColumnFamily,
@@ -139,6 +157,19 @@ impl<'a> Transaction<'a> {
             Self::Optimistic(tx) => tx.get_pinned_cf(cf, key),
             Self::Pessimistic(tx) => tx.get_pinned_cf(cf, key),
         }
+    }
+
+    pub fn multi_get<K: AsRef<[u8]>, I: IntoIterator<Item = K>>(
+        &self,
+        cf: &ColumnFamily,
+        keys: I,
+    ) -> Result<Vec<Option<Vec<u8>>>, rocksdb::Error> {
+        match self {
+            Self::Optimistic(tx) => tx.multi_get_cf(keys.into_iter().map(|key| (cf, key))),
+            Self::Pessimistic(tx) => tx.multi_get_cf(keys.into_iter().map(|key| (cf, key))),
+        }
+        .into_iter()
+        .collect()
     }
 
     pub fn put<K: AsRef<[u8]>, V: AsRef<[u8]>>(
