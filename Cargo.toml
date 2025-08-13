@@ -12,7 +12,7 @@ edition = "2021"
 
 [dependencies]
 bincode = { version = "2", features = ["serde"] }
-rocksdb = { version = "0.23" }
+rocksdb = { version = "0.24" }
 serde = "1"
 thiserror = "2"
 
